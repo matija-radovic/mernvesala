@@ -1,11 +1,12 @@
-import React from 'react'
-import axios from 'axios'
+//import logo from './logo.svg';
+//import './App.css';
 import { createContext, useState, useEffect } from 'react'
+import axios from 'axios'
 
-export const UserContext = createContext({});
+export const UserContext = createContext();
 
-const UserContextProvider = ({ children }) => {
-    const [user, setUser] = useState({
+function UserContextProvider({ children }) {
+    const [userData, setUserData] = useState({
         token: undefined,
         user: undefined,
         authProgress: true,
@@ -16,30 +17,35 @@ const UserContextProvider = ({ children }) => {
             let tempData = {
                 token: undefined,
                 user: undefined,
-                authProgress: false,
+                authProgress: false
             }
-            let token = locakStorage.getItem("auth-token");
+            let token = localStorage.getItem("auth-token");
             if (token == null) {
                 localStorage.setItem("auth-token", "");
                 token = "";
             }
 
+
             try {
                 const tokenResponse = await axios.post('/api/users/tokenIsValid', null, { headers: { "auth-token": token } });
+
+                console.log(tokenResponse);
+                console.log(tokenResponse.data);
                 if (tokenResponse.data) {
-                    const userResponse = await axios.get('/api/users/profile', { headers: { "auth-token": token } });
+                    const userResponse = await axios.get('/api/users/profile', { headers: { 'auth-token': token } });
                     tempData = {
                         token: token,
                         user: userResponse.data,
                         authProgress: false,
                     }
-                }else {
+                } else {
                     tempData = {
                         token: undefined,
                         user: undefined,
                         authProgress: false,
                     }
                 }
+
             } catch (error) {
                 console.log("Error with token verification");
                 localStorage.setItem("auth-token", "");
@@ -51,17 +57,16 @@ const UserContextProvider = ({ children }) => {
                 }
             }
             setUserData(tempData);
+            console.log(tempData);
         }
         isLoggedIn();
     }, []);
 
     return (
-        <div>
-            <UserContext.Provider value={{ user, setUser }}>
+        <UserContext.Provider value={{userData, setUserData}}>
                 {children}
-            </UserContext.Provider>
-        </div>
-    )
+        </UserContext.Provider>
+    );
 }
 
-export default UserContextProvider
+export default UserContextProvider;

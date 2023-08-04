@@ -2,10 +2,19 @@ const bcrypt = require('bcryptjs');
 
 const hashPassword = (password) => {
     return new Promise((resolve, reject) => {
+        console.log("Usli smo u promise: proslo");
         bcrypt.genSalt(10, (err, salt) => {
-            if(err) reject(err);
+            if(err) {
+                console.log("Error dok smo generisali salt: error");
+                reject(err);
+            }
             bcrypt.hash(password, salt, (err, hash) => {
-                if(err) reject(err);
+                
+                if(err) {
+                    console.log("Error dok smo hashovali sifru: error");
+                    reject(err);
+                }
+                console.log("Sve ok sa hashovanjem: proslo");
                 resolve(hash);
             });
         });

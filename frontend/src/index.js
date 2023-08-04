@@ -3,11 +3,18 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import UserContextProvider from './context/UserContext';
+import AvatarContextProvider from './context/AvatarContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+
+    <UserContextProvider>
+      <AvatarContextProvider>
+        <App />
+      </AvatarContextProvider>
+    </UserContextProvider>
   </React.StrictMode>
 );
 
