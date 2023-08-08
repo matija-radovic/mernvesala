@@ -13,6 +13,7 @@ import Register from './components/auth/Register';
 import RequireAuthLayout from './components/RequireAuthLayout';
 import SignOutLogo from './images/components/SignOutLogo';
 import Settings from './components/Settings';
+import Game from './components/game/Game';
 
 function App() {
     return (
@@ -30,6 +31,7 @@ function App() {
                         <Route path='/stats' element={<Stats />} />
                         <Route path='/create' element={<CreateLobby />} />
                         <Route path='/join' element={<JoinGame />} />
+                        <Route path='/game/:id' element={<Game/>} />
                     </Route>
                     <Route path='/signoutlogo' element={<SignOutLogo />} />
                     <Route path='*' element={<h1>Majmunee</h1>} />

@@ -20,11 +20,11 @@ const userSchema = mongoose.Schema({
             type: Number,
             default: 0
         },
-        winStreak: {
+        currentWinStreak: {
             type: Number,
             default: 0
         },
-        currentWinStreak: {
+        winStreak: {
             type: Number,
             default: 0
         },
