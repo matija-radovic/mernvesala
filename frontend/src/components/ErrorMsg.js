@@ -12,7 +12,7 @@ const ErrorMsg = ({msg, ...props}) => {
         exit={{ opacity: 0 }}
         {...props}>
             <span style={{color: "red"}}>
-                <b className="msg-text">{msg}</b>
+                <b className="msg-text">{`${msg}`}</b>
             </span>
         </motion.div>
     );
