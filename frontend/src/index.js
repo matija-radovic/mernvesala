@@ -9,7 +9,6 @@ import AvatarContextProvider from './context/AvatarContext';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-
     <UserContextProvider>
       <AvatarContextProvider>
         <App />

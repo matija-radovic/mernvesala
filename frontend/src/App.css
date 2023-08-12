@@ -26,7 +26,7 @@
     background: var(--clr-2);
     /*background-image: linear-gradient(var(--clr-3), var(--clr-5) 45%, var(--clr-4));*/
     box-shadow: 0px 8px 200px 0 rgba(255, 255, 255, 0.01), 0px -8px 20px rgba(255, 255, 255, 0.01);
-    
+
 }
 
 .App::before {
@@ -36,7 +36,7 @@
     width: calc(800px + 2*2px);
     height: calc(400px + 2*2px);
     border-radius: 30px;
-    background-image: linear-gradient(var(--rotate),var(--clr-3), var(--clr-4), var(--clr-5));
+    background-image: linear-gradient(var(--rotate), var(--clr-3), var(--clr-4), var(--clr-5));
     filter: blur(1.5rem);
     animation: spin 2.5s linear infinite;
 }
@@ -53,10 +53,11 @@
 }
 
 @keyframes spin {
-    0%{
+    0% {
         --rotate: 0deg;
     }
-    100%{
+
+    100% {
         --rotate: 360deg
     }
 }
@@ -70,39 +71,39 @@
     height: 400px;
 }
 
-.welcome{
+.welcome {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap:22px;
+    gap: 22px;
     width: 50%;
 }
 
-.login{
+.login {
     display: flex;
     flex-direction: column;
     padding-top: calc(400px/2 - 247.273px/2 - 42.182px + 22px);
     align-self: start;
-    gap:22px;
+    gap: 22px;
 }
 
-.register{
+.register {
     display: flex;
     flex-direction: column;
     padding-top: calc(400px/2 - 247.273px/2 - 42.182px);
     align-self: start;
-    gap:22px;
+    gap: 22px;
 }
 
-.msg{
-    padding:5px;
+.msg {
+    padding: 5px;
     align-self: center;
     text-align: center;
     text-decoration: none;
 }
 
-.msg-text::before{
+.msg-text::before {
     content: "\2764";
     padding: 0 5px
 }
@@ -118,10 +119,10 @@
     justify-content: space-between;
 }
 
-.left-main-menu{
+.left-main-menu {
     align-self: start;
     padding: 20px;
-    width:25%;
+    width: 25%;
 }
 
 .center-main-menu {
@@ -133,7 +134,7 @@
     align-items: center;
     justify-items: center;
     gap: 22px;
-    width:50%;
+    width: 50%;
 }
 
 
@@ -155,23 +156,23 @@
 
 .button:hover {
     box-shadow:
-    0px 0px 20px rgba(0,0,0, 0.5);
+        0px 0px 20px rgba(0, 0, 0, 0.5);
     outline: 3px solid #3a4e98c5;
     outline-offset: -3px;
     background-color: #3a4e9880;
 }
 
 .button.changed,
-.button.changed:hover{
+.button.changed:hover {
     outline: 3px solid orange;
 }
 
 input[type="submit"],
-input[type="button"]{
+input[type="button"] {
     cursor: pointer !important;
 }
 
-.back-button{
+.back-button {
     position: absolute;
     bottom: 20px;
     left: 20px;
@@ -186,11 +187,11 @@ input[type="button"]{
     align-items: flex-end;
     justify-content: center;
     gap: 10px;
-    width:25%;
+    width: 25%;
 }
 
-.backdrop{
-    position:absolute;
+.backdrop {
+    position: absolute;
     top: 0;
     left: 0;
     height: 100%;
@@ -202,7 +203,7 @@ input[type="button"]{
     justify-content: center;
 }
 
-.modal{
+.modal {
     width: 700px;
     height: 300px;
     background-color: #191B2A;
@@ -216,13 +217,13 @@ input[type="button"]{
     justify-content: center;
 }
 
-.modal-close{
+.modal-close {
     position: absolute;
     top: 5px;
     right: 5px;
 }
 
-.modal-choose-picture{
+.modal-choose-picture {
     width: 100%;
     height: 100%;
 
@@ -233,7 +234,7 @@ input[type="button"]{
     gap: 22px;
 }
 
-.choose-picture{
+.choose-picture {
     max-height: calc(300px - 33.8px - 22px - 10px);
     margin: auto;
 
@@ -241,7 +242,7 @@ input[type="button"]{
     align-items: center;
     justify-content: flex-start;
     flex-wrap: wrap;
-    gap: 11px; 
+    gap: 11px;
     overflow: hidden;
     overflow-y: auto;
 }
@@ -253,6 +254,7 @@ input[type="button"]{
     justify-content: flex-start;
     flex-direction: row-reverse;
 }
+
 /*.choose-picture-submit .button{
 
 }*/
@@ -263,7 +265,7 @@ input[type="button"]{
     max-height: 90px;
     max-width: 90px;
     background-color: rgba(139, 0, 0, 0.282);
-    
+
     border-radius: 25px;
     overflow: hidden;
     display: flex;
@@ -271,7 +273,7 @@ input[type="button"]{
     justify-content: center;
 }
 
-.avatar img{
+.avatar img {
     max-width: 85px;
     max-height: 85px;
     min-width: 85px;
@@ -282,12 +284,26 @@ input[type="button"]{
     background-color: var(--clr-3);
 }
 
-.avatar.selected{
+.avatar .waiting {
+    max-width: 85px;
+    max-height: 85px;
+    min-width: 85px;
+    min-height: 85px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--clr-3);
+}
+
+.avatar.selected {
     background-color: red
 }
-.avatar.setted{
+
+.avatar.setted {
     background-color: greenyellow;
 }
+
 .icon {
     outline: 1px solid black;
     outline-offset: -1px;
@@ -298,7 +314,7 @@ input[type="button"]{
     background-color: orange;
 }
 
-.create-lobby{
+.create-lobby {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -306,12 +322,12 @@ input[type="button"]{
     gap: 22px;
 }
 
-h1{
+h1 {
     text-align: center;
 }
 
 .settings,
-.stats{
+.stats {
     padding: 20px;
     width: 100%;
     height: 100%;
@@ -334,45 +350,106 @@ h1{
     text-align: center;
     border-bottom: 3px solid var(--clr-4);
 }
+
 .settings table tbody tr,
-.stats table tbody tr{
+.stats table tbody tr {
     border-bottom: 1px solid var(--clr-4);
 }
+
 .settings table tbody tr td:nth-child(1),
 .stats table tbody tr td:nth-child(1) {
     width: 50%;
     text-align: left;
     padding-left: 2%;
 }
+
 .settings table tbody tr td:nth-child(2),
 .stats table tbody tr td:nth-child(2) {
     width: 50%;
     text-align: left;
 }
+
 .settings table tbody tr:nth-last-child(1),
 .stats table tbody tr:nth-last-child(1) {
     border-bottom: 3px solid var(--clr-4);
 }
 
-.settings form.new-user-properties{
+.settings form.new-user-properties {
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap:11px;
+    gap: 11px;
 }
 
 .button.changed.matched-password,
-.button.changed.matched-password:hover{
+.button.changed.matched-password:hover {
     outline: 3px solid yellowgreen;
 }
+
+
+.player-info {
+    padding: 20px;
+}
+
+.game-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 800px;
+    height: 400px;
+}
+
+.game{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.game-center{
+    position:relative;
+    top:40%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-center h1{
+    font-size: 40px;
+}
+.game-center h1 b{
+    cursor: default;
+}
+.game-center h4{
+    cursor: pointer;
+    font-size: 20px;
+    border-radius: 30px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 5px;
+    outline: 2px solid transparent;
+    outline-offset: 5px;
+    transition: 0.4s cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+.game-center h4:hover{
+    font-size: 20px;
+    background-color: #3c66e314;
+    outline: 2px solid #3c66e314;
+    outline-offset: 3px;
+}
+
+
 
 
 /* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 /* Firefox */

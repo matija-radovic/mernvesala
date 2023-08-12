@@ -15,15 +15,29 @@ router.post('/create', auth, (req, res) => {
     }
 
     const roomCode = rooms.createRoom(playerNumber);
-    console.log(rooms);
+    console.log("Created new Room");
     return res.json({roomCode: roomCode});
 });
 
-router.get('/:id', auth, (req, res) => {
-    const roomCode = req.params.id;
-    if(rooms.currentRooms.find((room) => (room.roomID === roomCode))){
-        return res.json({msg: "Room exists"});
+router.post('/join', auth, (req, res) => {
+    const user = req.user;
+
+    const roomCode = parseInt(req.body.roomCode);
+    const roomToJoin = rooms.currentRooms.find((room) => room.roomID === roomCode);
+    const userRoom = rooms.currentRooms.find(room => (room.players.find(player => player.user.id === user._id)));
+   
+    console.log("roomToJoin:",roomToJoin);
+    console.log("userRoom:",userRoom);
+
+    if(userRoom && userRoom.roomID !== roomToJoin?.roomID){
+        return res.status(400).json({msg: `You are already in-game, room code: ${userRoom.roomID}`})
     }
+
+    if(!roomToJoin){
+        return res.status(400).json({msg: "Such room doesnt exist"});
+    }
+
+    return res.json(null);
 });
 
 

@@ -31,7 +31,7 @@ function App() {
                         <Route path='/stats' element={<Stats />} />
                         <Route path='/create' element={<CreateLobby />} />
                         <Route path='/join' element={<JoinGame />} />
-                        <Route path='/game/:id' element={<Game/>} />
+                        <Route path='/game/:roomID' element={<Game/>} />
                     </Route>
                     <Route path='/signoutlogo' element={<SignOutLogo />} />
                     <Route path='*' element={<h1>Majmunee</h1>} />
@@ -42,6 +42,6 @@ function App() {
 }
 
 /**
- * <Route path ='/main-menu' element={<RequireAuth comp={<MainMenu/>} loader={<p>Nosi se u kurac</p>} redirect="/login"/>}/>
+ * <Route path ='/main-menu' element={<RequireAuth comp={<MainMenu/>} loader={<p> :)))))) </p>} redirect="/login"/>}/>
  */
 export default App;

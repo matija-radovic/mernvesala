@@ -39,7 +39,7 @@ class Player {
         return {
             user: {
                 name: this.user.name,
-                picture: this.picture
+                picture: this.user.picture
             },
             turn: this.turn,
             status: this.status,
@@ -89,8 +89,8 @@ class Room {
      * @param {String} socketID 
      * @throws {Error} If `Room.roomState` is in progress or ended, or room is full.
      */
-    joinRoom(user, socketID) {
-        this.printArr();
+    async joinRoom(user, socketID) {
+        console.log("User to join:", user);
         const player = this.players.find(player => player.user?.id === user.id)
         if (player) {
             if (player.socketID !== socketID) {
@@ -110,7 +110,8 @@ class Room {
 
 
         ///clear timeout
-        this.players.push(new Player(user, socketID));
+        
+        this.players.push(new Player(await User.findById(user.id), socketID));
         this.printArr();
     }
 
@@ -196,7 +197,6 @@ class Room {
         return false;
     }
     /**
-     * 
      * @param {String} letter one char
      * @returns array of indexes where char is found, if char is already used it will return -1
      */
@@ -246,13 +246,18 @@ class Room {
     }
 
     getRoomDataForPlayers() {
+        const guessedLetters = this.guessedLetterIndexes.map(index => ({
+            index: index,
+            letter: this.word[index]
+        }));
+
         return {
             roomID: this.roomID,
             roomState: this.roomState,
             playerNumber: this.playerNumber,
             players: this.getPlayers(), //U okviru ovoga se nalaze vec pogodjena slova
             wordLength: this.word.length,
-            guessedLetterIndexes: this.guessedLetterIndexes,
+            guessedLetters: guessedLetters,
         }
     }
 
@@ -261,6 +266,7 @@ class Room {
         this.players.forEach(p => {
             arr.push(p.getPlayer());
         });
+        return arr;
     }
 }
 
@@ -333,11 +339,11 @@ class GameRooms {
      */
     createRoom(playerNumber) {
         const roomCode = this.roomCodeManager.generateCode();
-        const room = new Room(roomCode, playerNumber, word, this.deleteRoom.bind(this))
+        const room = new Room(roomCode, playerNumber, this.wordManager.getOneWord(), this.deleteRoom.bind(this))
         this.currentRooms.push(room);
 
         //If no one joined the room in 40seconds delete the room;
-        room.roomDeletionTimeout();
+        //room.roomDeletionTimeout();
 
         return roomCode;
     }

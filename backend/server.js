@@ -24,22 +24,29 @@ app.use('/api/games', gamesRouter);
 io.on('connection', (socket) => {
     console.log("This socket joined: ", socket.id);
 
-    socket.on("room:join", (data) => {
-        const user = data.user;
-        const roomCode = data.roomCode
-        const roomToJoin = rooms.currentRooms.find((room) => room.roomID === roomCode);
+    socket.on("game:join", async ({ user, roomID }) => {
+        console.log(`User trying to join: ${user.name}, roomID: ${roomID}`);
+        console.log(`Rooms object`, rooms);
+        roomID = parseInt(roomID);
+        if (isNaN(roomID)) {
+            console.log("Nan error");
+            socket.emit('game:join:fail', { msg: `Room id can only contain numbers` });
+            return;
+        }
+
+        const roomToJoin = rooms.currentRooms.find((room) => room.roomID === roomID);
 
         //Valid request
-        if (!user || !roomCode) {
+        if (!user || !roomID) {
             console.log("first");
-            socket.emit('room:join:fail', { msg: `Error no user or no roomCode` });
+            socket.emit('game:join:fail', { msg: `Error no user or no roomID` });
             return;
         }
 
         //Room exists
         if (!roomToJoin) {
             console.log("second");
-            socket.emit('room:join:fail', { msg: "no such room exists" });
+            socket.emit('game:join:fail', { msg: "no such room exists" });
             return;
         }
 
@@ -49,7 +56,7 @@ io.on('connection', (socket) => {
             //In different game
             if (userRoom !== roomToJoin) {
                 console.log("third");
-                socket.emit('room:join:fail', { msg: `You alread in a game with code: ${userRoom.roomID}` });
+                socket.emit('game:join:fail', { msg: `You alread in a game with code: ${userRoom.roomID}` });
                 return;
             }
 
@@ -59,10 +66,11 @@ io.on('connection', (socket) => {
 
                 //Handle changing sockets
                 try {
-                    roomToJoin.joinRoom(user, socket.id);
-                    socket.emit('room:join:success', { msg: "you are rejoining" });
+                    await roomToJoin.joinRoom(user, socket.id);
+                    socket.emit('game:join:success', { msg: "you are rejoining", setupInfo: {roomPlayerNumber: roomToJoin.playerNumber } });
+                    socket.emit('game:update', {room: roomToJoin.getRoomDataForPlayers()})
                 } catch (err) {
-                    socket.emit('room:join:fail', { msg: `Error: ${err}` });
+                    socket.emit('game:join:fail', { msg: `Error: ${err}` });
                 }
                 console.log(rooms);
                 return;
@@ -71,16 +79,16 @@ io.on('connection', (socket) => {
 
         //Handle joining player
         try {
-            roomToJoin.joinRoom(user, socket.id);
+            await roomToJoin.joinRoom(user, socket.id);
+            socket.join(roomID);
+            socket.emit('game:join:success', { msg: "Joining the room", setupInfo: {roomPlayerNumber: roomToJoin.playerNumber }});
+            io.to(roomID).emit('game:update', { room: roomToJoin.getRoomDataForPlayers() });
             if (roomToJoin.players.length === roomToJoin.playerNumber) {
-                io.to(roomCode).emit('room:start');
+                io.to(roomID).emit('game:update:start');
             }
-            socket.join(roomCode);
-            socket.emit('room:join:success', { msg: "Joining the room" });
-            io.to(roomCode).emit('room:update');
         } catch (err) {
             console.log("here");
-            socket.emit('room:join:fail', { msg: `Error: ${err}` });
+            socket.emit('game:join:fail', { msg: `Error: ${err}` });
         }
     });
 
@@ -113,17 +121,26 @@ io.on('connection', (socket) => {
         }
 
         let goodMove = false;
+        player.incrementAttempt();
         if (move.length > 1) {
             //Reč
             if (!room.validWord(move)) {
                 goodMove = false;
                 player.addPoints(-2);
-                io.to(roomID).emit('game:update', { room: room.getRoomDataForPlayers(), goodMove: goodMove });
+                io.to(roomID).emit('game:update:move', { room: room.getRoomDataForPlayers(), goodMove: goodMove, guessedWord: move });
                 return;
             }
-            ///////////////////////
-            ////Handle end room////
-            ///////////////////////
+
+            //Dodavanje koliko je slova pogodio sa jednom recju
+            player.addPoints(move.length - room.guessedLetterIndexes);
+            try {
+                rooms.saveToDatabase(roomID);
+            } catch (error) {
+                console.log(error);
+            }
+
+            io.to(roomID).emit('game:update:end', { room: room.getRoomDataForPlayers(), word: room.word });
+
         } else if (move.length === 1) {
             //Slovo
             const arrayOfLetterIndexes = room.validLetter(move);
@@ -133,7 +150,7 @@ io.on('connection', (socket) => {
                 goodMove = false;
                 player.addGuessedLetter(move, false);
                 room.nextTurn();
-                io.to(roomID).emit('game:update', { room: room.getRoomDataForPlayers(), goodMove: goodMove });
+                io.to(roomID).emit('game:update:move', { room: room.getRoomDataForPlayers(), goodMove: goodMove });
                 return;
             }
 
@@ -146,7 +163,8 @@ io.on('connection', (socket) => {
             //Ako je pogodio slovo
             room.setGuessedIndexes(arrayOfLetterIndexes);
             player.addGuessedLetter(move, true);
-            
+
+            //Ako je zavrsio reč
             if (room.word.length === room.guessedLetterIndexes.length) {
                 io.to(roomID).emit('game:update:end', { room: room.getRoomDataForPlayers() });
                 try {
@@ -155,33 +173,28 @@ io.on('connection', (socket) => {
                     console.log(error);
                 }
 
-                /***
-                 * Cuvanje u bazu
-                 */
+                io.to(roomID).emit('game:update:end', { room: room.getRoomDataForPlayers(), word: room.word });
 
-
-                ///////////////////////
-                ////Handle end room////
-                ///////////////////////
                 return;
             }
+
+            //Ako je pogodio samo jedno slovo a nije zavrsio reč
             room.nextTurn();
-            io.to(roomID).emit('game:update', { room: room.getRoomDataForPlayers(), goodMove: goodMove });
+            io.to(roomID).emit('game:update:move', { room: room.getRoomDataForPlayers(), goodMove: goodMove });
             return
         }
     })
 
-    socket.on('room:leave', (data) => {
-        const user = data.user;
-        const roomID = data.roomID;
+    socket.on('game:leave', ({ user, roomID }) => {
         const room = rooms.currentRooms.find(r => r.roomID === roomID);
 
         if (room.roomState !== "Waiting") {
-            socket.emit('room:leave:fail', { msg: "You cant leave the game while its running" });
+            socket.emit('game:leave:fail', { msg: "You cant leave the game while its running" });
             return;
         }
 
         if (room.players.length < 2 || room.players.filter(player => player.status === "Online").length < 2) {
+            socket.leave(roomID);
             rooms.currentRooms.deleteRoom(roomID);
             return;
         }
@@ -189,18 +202,18 @@ io.on('connection', (socket) => {
         try {
             room.leaveRoom(user, socket.id, 'leave');
             socket.leave(roomID);
-            io.to(roomID).emit("room:update", { room });
+            io.to(roomID).emit("game:update", { room });
         } catch (error) {
-            socket.emit("room:leave:fail", { msg: "Leaving type is wrong:" });
+            socket.emit('game:leave:fail', { msg: "Leaving type is wrong:" });
         }
     });
 
     socket.on('disconnect', () => {
-        /**
-         * Double query jer javasciprt ne moze da smesti jedan parametar u jednu promenljivu osim ako ne napisem svoju foreach funkciju, a mrzi me
-         */
-        /*
         const room = rooms.currentRooms.find(r => (r.players.find(player => player.socketID === socket.id)));
+        //Da li je uopste u nekoj igri
+        if (!room) {
+            return;
+        }
         const user = room.players.find(player => player.socketID === socket.id);
         const roomID = room.roomID;
 
@@ -209,9 +222,10 @@ io.on('connection', (socket) => {
             if (room.players.length < 2 || room.players.filter(player => player.status === "Online").length < 2) {
                 //User disconnected mid game: TODO obraditi logiku kad se zavrsi jer su svi izasli iz sobe.
                 rooms.currentRooms.deleteRoom(roomID);
-                io.to(roomID).emit("room:update:end", { room });
+                io.to(roomID).emit("game:update:end", { room });
                 return;
             }
+            room.nextTurn();
             return;
         }
 
@@ -222,11 +236,10 @@ io.on('connection', (socket) => {
 
         try {
             room.leaveRoom(user, socket.id, 'disconnect');
-            io.to(roomID).emit("room:update", { room });
+            io.to(roomID).emit("game:update", { room });
         } catch (error) {
-            socket.emit("room:leave:fail", { msg: "Leaving type is wrong:" });
+            socket.emit("game:leave:fail", { msg: "Leaving type is wrong:" });
         }
-*/
         console.log("This socket left: " + socket.id)
     });
 });

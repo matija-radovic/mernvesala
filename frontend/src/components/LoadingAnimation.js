@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
-const LoadingAnimation = () => {
-  const [loadingText, setLoadingText] = useState('Loading');
+const LoadingAnimation = ({customLoadingText = "", ...props}) => {
+  const [loadingText, setLoadingText] = useState(`Loading${!customLoadingText ? "" : (" " + customLoadingText)}`);
   
   useEffect(() => {
     const intervalId = setInterval(() => {
       setLoadingText(prevText => {
-        if (prevText === 'Loading...') {
-          return 'Loading';
+        if (prevText.endsWith("...")) {
+          return prevText.substring(0,prevText.length - 3);
         } else {
           return prevText + '.';
         }
@@ -19,7 +19,7 @@ const LoadingAnimation = () => {
     };
   }, []);
 
-  return <div>{loadingText}</div>;
+  return <div {...props}>{loadingText}</div>;
 };
 
 export default LoadingAnimation;
