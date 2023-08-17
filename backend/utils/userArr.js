@@ -56,7 +56,7 @@ class Player {
         this.points += points;
     }
 
-    incrementAttempt(){
+    incrementAttempt() {
         this.guessedAttempts += 1;
     }
 }
@@ -69,18 +69,30 @@ class Room {
         this.players = [];
         this.word = word;
         this.guessedLetterIndexes = [];
-        this.timeout = null;
+        this.timeoutCreation = null;
+        this.timeoutMove = null;
+        this.timeoutExistance = null;
         this.deleteRoomCallback = deleteRoomCallback;
     }
 
     printArr() {
-        console.log("printing array");
-        for (let i = 0; i < this.players.length; i++) {
-            console.log(this.players[i])
-        }
-        console.log("finished printing array");
+        this.players.forEach((p) => { console.log(`${p.user.name}`) })
     }
 
+    printRoom() {
+        console.log("//////////////////////////////////////////")
+        console.log("Room info: ", {
+            roomID: this.roomID,
+            roomState: this.roomState,
+            playerNumber: this.playerNumber,
+            players: this.players,
+            word: this.word,
+            guessedLetterIndexes: this.guessedLetterIndexes,
+        });
+        console.log("Player in that room info:");
+        this.players.forEach((p) => { console.log(`${p.user.name}`) })
+        console.log("//////////////////////////////////////////")
+    }
     /**
      * Joins a user to room. If user is in the same room, `player.status` will be set to "Online" and if hes accessing from different socket, `socketID` will change to new one.
      * Information about socket change should be handled by the invoker of this function.
@@ -89,12 +101,14 @@ class Room {
      * @param {String} socketID 
      * @throws {Error} If `Room.roomState` is in progress or ended, or room is full.
      */
-    async joinRoom(user, socketID) {
-        console.log("User to join:", user);
+    async joinRoom(user, socket) {
+        /*console.log("User to join: ", user.name);*/
         const player = this.players.find(player => player.user?.id === user.id)
         if (player) {
-            if (player.socketID !== socketID) {
-                player.changeSocket(socketID);
+            console.log("Chaning socket for user: " + player.user.name + "\toldSocketID: " + player.socketID + "\tnewSocketID: " + socket.id);
+            if (player.socketID !== socket.id) {
+                player.changeSocket(socket.id);
+                socket.join(this.roomID);
             }
             player.changeStatus("Online");
             return;
@@ -109,10 +123,16 @@ class Room {
         }
 
 
-        ///clear timeout
-        
-        this.players.push(new Player(await User.findById(user.id), socketID));
-        this.printArr();
+        this.players.push(new Player(await User.findById(user.id), socket.id));
+        console.log("User: " + user.name + " joined");
+        console.log("User list after the newly joined user: "); this.printArr();
+        //Time the user has to join the room
+        if (this.timeoutCreation) {
+            clearTimeout(this.timeoutCreation);
+            this.timeoutCreation = null;
+        }
+
+        /*this.printArr();*/
     }
 
     /**
@@ -123,24 +143,57 @@ class Room {
      * @param {String} type ['disconnect' | 'leave'] other types throw Error
      * @returns 
      */
-    leaveRoom(user, socketID, type) {
-        const discPlayer = this.players.find((player) => (player.user?.id === user.id));
+    leaveRoom(user, socket, type) {
+        const discPlayer = this.players.find((player) => (player.user.id === user.id));
+        console.log(discPlayer);
         switch (type) {
-            case "disconnect":
-                if (this.roomState === "Waiting") {
-                    //Uklanjanje iz sobe komplentno
-                    this.players = this.players.filter((player) => (player === discPlayer));
+            case 'disconnect':
+                //Room in progress? - Set player as offline
+                if (this.roomState !== "Waiting") {
+                    discPlayer?.changeStatus("Offline");
+                    console.log("printing Room");
+                    this.printRoom();
+                    if(this.players.filter(player => player.status === 'Online').length < 2) {
+                        console.log("ending the game");
+                        this.updateState('Ended');
+                        this.deleteRoomCallback(this.roomID, 'Ending mid game');
+                        return;
+                    }
+                    if(this.players.find(player => (player.turn === true && player.user.id === user.id))){
+                        this.nextTurn();
+                    }
                     return;
                 }
-                //Upitnik jer mozda se diskonektuje na kraj partije
-                discPlayer?.changeStatus("Offline");
+
+                //Room is in waiting state - Deleting user from room
+                this.players = this.players.filter((player) => (player.user.id !== discPlayer.user.id));
+
+                //Should we delete the room?
+                if (this.players.length === 0) {
+                    console.log("deleted the rum due to afk");
+                    this.deleteRoomCallback(this.roomID);
+                }
+
                 break;
-            case "leave":
-                if (this.roomState === "Waiting") {
-                    //Uklanjanje iz sobe komplentno
-                    this.players = this.players.filter((player) => (player === discPlayer));
+            case 'leave':
+                //Room in progress? - cant leave while in progress
+                if (this.roomState !== "Waiting") {
+                    console.log('Trying to leave while waiting?');
+                    socket.emit('game:leave:fail', { msg: "You cant leave the game while its running" });
                     return;
                 }
+
+                //Room is in waiting state - Deleting user from room
+                this.players = this.players.filter((player) => (player.user.id !== discPlayer.user.id));
+                socket.emit('game:leave:success', { msg: "You left successfully" });
+                socket.leave(this.roomID);
+
+                //Should we delete the room?
+                if (this.players.length === 0) {
+                    this.deleteRoomCallback(this.roomID)
+                    console.log('deleted da room');
+                }
+
                 break;
             default:
                 throw new Error("wrong type");
@@ -156,15 +209,23 @@ class Room {
     }
 
     /**
-     * Deletes the room if no one enters the room
+     * Deletes the room after x amount of time
+     * @param {Number} time 
      */
-    roomDeletionTimeout() {
-        this.timeout = setTimeout(() => {
-            this.timeout = null;
+    emptyRoomDeletionTimeout(time = 40) {
+        this.timeoutCreation = setTimeout(() => {
+            this.timeoutCreation = null;
             if (this.players.length === 0) {
                 this.deleteRoomCallback(this.roomID);
             }
-        }, 40 * 1000) //sec
+        }, time * 1000) //sec
+    }
+
+    roomLifeTimeout() {
+        this.timeoutExistance = setTimeout(() => {
+            this.timeoutExistance = null;
+            this.deleteRoomCallback(this.roomID, "Max ocupation of room is 40minutes");
+        }, 40 * 60 * 1000)
     }
 
     /**
@@ -181,20 +242,39 @@ class Room {
             while (nextIndex !== currentIndex) {
                 if (this.players[nextIndex].status === "Online") {
                     this.players[nextIndex].turn = true;
+                    console.log("Player whos turn it is", this.players[nextIndex])
                     return this.players[nextIndex];
                 }
-                nextIndex = (currentIndex + 1) % this.players.length;
+                nextIndex = (nextIndex + 1) % this.players.length;
             }
             throw new Error("Internal Server Error, Couldnt find next user");
         }
         throw new Error("Internal Server Error, couldn't find next player turn");
     }
 
+    /**
+     * Handled by sockets
+     * @param {Number} time 
+     */
+    nextTurnTimeout(time) {
+        ///Empty
+    }
+
+
     validWord(word) {
         if (word === this.word) {
-            return true;
+            const allIndexes = Array.from({ length: this.word.length }, (_, index) => index);
+
+            this.guessedLetterIndexes.forEach(index => {
+                const foundIndex = allIndexes.indexOf(index);
+                if (foundIndex !== -1) {
+                    allIndexes.splice(foundIndex, 1); // Remove the index from allIndexes
+                }
+            });
+
+            return allIndexes;
         }
-        return false;
+        return undefined;
     }
     /**
      * @param {String} letter one char
@@ -225,22 +305,22 @@ class Room {
      * Moramo da pazimo kada settujemo sledeci korak
      */
     findWinner() {
-        let max = -100000;
-        let winner = undefined;
-        this.players.forEach(player => {
-            if (player.points >= max) {
-                if(player.points === max && player.turn){
-                    winner = player;
-                }
+        const winner = this.players.reduce((maxPlayer, currentPlayer) => {
+            if (currentPlayer.points > maxPlayer.points) {
+                return currentPlayer;
+            } else if (currentPlayer.points === maxPlayer.points && currentPlayer.turn) {
+                return currentPlayer;
+            } else {
+                return maxPlayer;
             }
-        });
+        }, this.players[0]);
         return winner;
     }
 
     getUsedLetters() {
         const letters = [];
         this.players.forEach(p => {
-            p.guessedLetters.foreach(l => letters.push(l.char));
+            p.guessedLetters.forEach(l => letters.push(l.char));
         });
         return letters;
     }
@@ -267,6 +347,14 @@ class Room {
             arr.push(p.getPlayer());
         });
         return arr;
+    }
+
+    getEndRoomData() {
+        return {
+            playerNumber: this.playerNumber,
+            players: this.getPlayers().sort((a, b) => b.points - a.points),
+            word: this.word,
+        }
     }
 }
 
@@ -333,6 +421,10 @@ class GameRooms {
         this.currentRooms = [];
     }
 
+    init(io) {
+        this.io = io;
+    }
+
     /**
      * @param {playerNumber} playerNumber number of players to be in the room - NUMBER
      * @returns returns room code upon successfully making the room - NUMBER
@@ -342,57 +434,87 @@ class GameRooms {
         const room = new Room(roomCode, playerNumber, this.wordManager.getOneWord(), this.deleteRoom.bind(this))
         this.currentRooms.push(room);
 
-        //If no one joined the room in 40seconds delete the room;
-        //room.roomDeletionTimeout();
 
+        room.emptyRoomDeletionTimeout(40);
+
+        console.log(room);
         return roomCode;
     }
 
     /**
-     * Deletes a room from the currentRoom array and releases the code
+     * Deletes a room from the currentRoom array
+     * Removes all sockets from that room
+     * Releases the roomCode
      * @param {Number} roomID 
      */
-    deleteRoom(roomID) {
+    deleteRoom(roomID, reason = "") {
+        console.log("room with id:" + roomID + "got deleted");
+        if (reason === 'Ending mid game'){
+            this.io.to(roomID).emit('game:update:end', {room: this.currentRooms.find(rm => rm.roomID === roomID).getRoomDataForPlayers()});
+        } else if (reason !== "") {
+            this.io.to(roomID).emit('game:timeout', { msg: reason });
+        }
+
+        const r = this.currentRooms.find(rm => rm.roomID === roomID);
+        if (r?.roomLifeTimeout) {
+            clearInterval(r.roomLifeTimeout);
+        }
+
+        this.io.socketsLeave(roomID);
         this.roomCodeManager.releaseCode(this.currentRooms.find((room) => (room.roomID === roomID)));
         this.currentRooms = this.currentRooms.filter(room => room.roomID !== roomID);
+    }
+
+    startGame(roomID) {
+        const roomToStart = this.currentRooms.find(room => room.roomID === roomID);
+        roomToStart.updateState('Progress');
+        /* Sanity check */
+        if (roomToStart.players.length !== roomToStart.playerNumber) {
+            this.deleteRoom(roomID);
+            throw new Error("Couldnt start the game, this function was called when room wasnt full");
+        }
+        roomToStart.players[0].turn = true;
+        roomToStart.roomLifeTimeout();
+        this.io.to(roomID).emit('game:update:start', { room: roomToStart.getRoomDataForPlayers });
     }
 
     async saveToDatabase(roomID) {
         const consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'];
         const vowel = ['a', 'e', 'i', 'o', 'u'];
-        const room = this.room.find(r => r.roomID === roomID);
+        const room = this.currentRooms.find(r => r.roomID === roomID);
         const winner = room.findWinner();
 
         for (let i = 0; i < room.players.length; i++) {
             const player = room.players[i];
             const user = await User.findById(player.user.id);
-            const currentWinStreak = user.stats.currentWinStreak +  (winner.id === player.id ? 1 : 0);
+            const currentWinStreak = winner.user.id === player.user.id ? user.stats.currentWinStreak + 1 : 0;
             user.stats = {
+                ...(user.stats),
                 gamesPlayed: user.stats.gamesPlayed + 1,
-                gamesWon: user.stats.gamesWon + (winner.id === player.id ? 1 : 0),
+                gamesWon: user.stats.gamesWon + (winner.user.id === player.user.id ? 1 : 0),
                 currentWinStreak: currentWinStreak,
                 winStreak: (currentWinStreak > user.stats.winStreak ? currentWinStreak : user.stats.winStreak),
                 lettersGuessed: user.stats.lettersGuessed + player.guessedLetters.length,
-                vowelGuessed: user.stats.vowelGuessed + (()=> {
-                    let counter = 0; 
+                vowelGuessed: user.stats.vowelGuessed + (() => {
+                    let counter = 0;
                     player.guessedLetters.forEach(letter => {
-                        if(consonants.includes(letter.char)){
+                        if (consonants.includes(letter.char)) {
                             counter += 1;
                         }
                     });
                     return counter;
                 })(),
-                consonantsGuessed: user.stats.consonantsGuessed + (()=> {
-                    let counter = 0; 
+                consonantsGuessed: user.stats.consonantsGuessed + (() => {
+                    let counter = 0;
                     player.guessedLetters.forEach(letter => {
-                        if(vowel.includes(letter.char)){
+                        if (vowel.includes(letter.char)) {
                             counter += 1;
                         }
                     });
                     return counter;
                 })(),
                 wordsGuessed: user.stats.wordsGuessed + (player.turn ? 1 : 0),
-                guessAttempts: user.stats.guessAttempts + player.guessAttempts,
+                guessAttempts: user.stats.guessAttempts + player.guessedAttempts,
                 lastGame: Date.now(),
             }
             user.save();

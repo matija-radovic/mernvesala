@@ -13,11 +13,12 @@ const JoinGame = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const newNum = num;
+        const newNum = parseInt(num,10);
         try {
             await axios.post(`/api/games/join`, {
-                roomCode: num
+                roomCode: newNum,
             }, { headers: { 'auth-token': userData.token } });
+            console.log(newNum);
             navigate(`/game/${newNum}`, { replace: true });
         } catch (err) {
             console.log(err);

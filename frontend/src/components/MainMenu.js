@@ -1,6 +1,6 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import SignOutLogo from '../images/components/SignOutLogo';
 import SettingsLogo from '../images/components/SettingsLogo';
@@ -14,11 +14,21 @@ const MainMenu = () => {
     const { userData, setUserData } = useContext(UserContext);
     const { pictures } = useContext(AvatarContext);
     const navigate = useNavigate();
+    const location = useLocation();
     const [sound, setSound] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
+    const [modalRedirect, setModalRedirect] = useState(location.state?.msg);
     const close = () => setModalOpen(false);
     const open = () => setModalOpen(true);
+    const closeNavigationoModal = () => {setModalRedirect("");}
 
+    useEffect(()=> {
+        if(modalRedirect !== ""){
+            window.history.replaceState({}, document.title);
+        }
+    }, [modalRedirect])
+
+    
 
     const toggleSound = () => {
         setSound(!sound);
@@ -58,6 +68,12 @@ const MainMenu = () => {
                 mode='wait'
                 onExitComplete={() => null}>
                 {modalOpen && <Modal modalOpen={modalOpen} handleClose={close}><ChoosePicture /></Modal>}
+            </AnimatePresence>
+            <AnimatePresence
+                initial={false}
+                mode='wait'
+                onExitComplete={() => null}>
+                {modalRedirect && <Modal modelOpen={modalRedirect} handleClose={closeNavigationoModal}>{modalRedirect}</Modal>}
             </AnimatePresence>
         </div>
     )

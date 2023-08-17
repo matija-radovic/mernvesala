@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 
-const ErrorMsg = ({msg, ...props}) => {
+const ServerMsg = ({msg, ...props}) => {
     return (
         <motion.div 
         className='msg' 
@@ -17,4 +17,4 @@ const ErrorMsg = ({msg, ...props}) => {
     );
 };
 
-export default ErrorMsg
+export default ServerMsg

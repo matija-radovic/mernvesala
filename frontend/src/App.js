@@ -34,7 +34,7 @@ function App() {
                         <Route path='/game/:roomID' element={<Game/>} />
                     </Route>
                     <Route path='/signoutlogo' element={<SignOutLogo />} />
-                    <Route path='*' element={<h1>Majmunee</h1>} />
+                    <Route path='*' element={<h1>Nothing here :(</h1>} />
                 </Routes>
             </BrowserRouter>
         </div>

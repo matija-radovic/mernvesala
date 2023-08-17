@@ -20,7 +20,7 @@ const dropIn = {
     }
 }
 
-const Modal = ({ children, handleClose, text }) => {
+const Modal = ({ children, handleClose, ...props }) => {
 
     return (
         < Backdrop onClick={handleClose} >
@@ -31,6 +31,7 @@ const Modal = ({ children, handleClose, text }) => {
                 initial="hidden"
                 animate="visible"
                 exit="exit"
+                {...props}
             >
                 <CloseLogo className="modal-close" style={{cursor: "pointer"}} width={30} height={30} onClick={handleClose}/>
                 {children}
