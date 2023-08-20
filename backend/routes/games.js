@@ -2,6 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const rooms = require('../utils/userArr');
 
+//Creates a game with req.body.playerNumber of players
 router.post('/create', auth, (req, res) => {
     const playerNumber = parseInt(req.body.playerNumber, 10);
     if (playerNumber > 4 || playerNumber < 2) {
@@ -19,6 +20,7 @@ router.post('/create', auth, (req, res) => {
     return res.json({ roomCode: roomCode });
 });
 
+//Checks if the room is available
 router.post('/join', auth, (req, res) => {
     const user = req.user;
 

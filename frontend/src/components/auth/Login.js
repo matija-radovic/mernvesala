@@ -36,10 +36,7 @@ const Login = () => {
                 password: "",
             });
 
-
             navigate('/main-menu', {replace: true});
-            //window.location = "/main-menu";
-
         } catch (err) {
             err.response.data.msg ?
                 setErrorMsg(err.response.data.msg) :

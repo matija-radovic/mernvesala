@@ -22,19 +22,19 @@ const Game = () => {
 
     const [room, setRoom] = useState();
     const [avatarPosition, setAvatarPosition] = useState([
-        { profileBlock: { top: 0, left: 0, flexDirection: 'row' }, infoBlock: { marginBottom: "auto" } }, //flex direction da se ubaci
+        { profileBlock: { top: 0, left: 0, flexDirection: 'row' }, infoBlock: { marginBottom: "auto" } },
         { profileBlock: { bottom: 0, right: 0, flexDirection: 'row-reverse' }, infoBlock: { marginTop: "auto" } },
         { profileBlock: { top: 0, right: 0, flexDirection: 'row-reverse' }, infoBlock: { marginBottom: "auto" } },
         { profileBlock: { bottom: 0, left: 0, flexDirection: 'row' }, infoBlock: { marginTop: "auto" } }
     ]);
 
     const [joined, setJoined] = useState(false);
-    const [successMsg, setSuccessMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState(""); //Future implementations for displaying that the move is sent correctly
     const [errorMsg, setErrorMsg] = useState("");
 
     const [moveInfo, setMoveInfo] = useState(undefined);
     const [move, setMove] = useState("");
-    const [guessDisabled, setGuessDisabled] = useState(false);
+    //const [guessDisabled, setGuessDisabled] = useState(false); //Maybe future implementations
     const [validMove, setValidMove] = useState(false);
     const [allTriedLetters, setAllTriedLetters] = useState([]);
     const dropIn = {
@@ -69,7 +69,8 @@ const Game = () => {
     }
 
     const processQueue = function () {
-        if (queue.current === 0) { //Jos jedna provera za svaki slucaj
+        //Additional check
+        if (queue.current === 0) {
             return;
         }
         isJoining.current = true;
@@ -124,7 +125,7 @@ const Game = () => {
         });
 
         socket.on('game:update:end', ({ room, endRoomData }) => {
-            //Modal displays based on room state, endRoomData is useless
+            //Modal displays based on room state, endRoomData is useless/depricated
             console.log('game:update:end');
             setRoom(room);
         });
@@ -155,6 +156,10 @@ const Game = () => {
             navigate('/main-menu', { replace: true, state: { msg: msg } });
         });
 
+        socket.on('game:update:start', ({room}) => {
+            console.log('game:update:start');
+            //Currently not in use since addition of event game:update
+        })
         socket.on('game:update:start:fail', ({ msg }) => {
             console.log('game:update:start:fail');
             setMoveInfo({ info: msg, goodMove: false });
@@ -187,6 +192,8 @@ const Game = () => {
             socket.off('game:reconnect');
             socket.off('game:update');
             socket.off('game:update:move');
+            socket.off('game:update:start');
+            socket.off('game:update:start:fail');
             socket.off('game:update:end');
             socket.off('game:update:offline');
             socket.off('game:update:move:err');
@@ -255,7 +262,6 @@ const Game = () => {
                 displayWord[i] = guessedLetter?.letter;
             }
 
-            //console.log(displayWord);
             return (
                 <div className='game-center'>
                     <h1 className='letters' style={{ width: "100%", display: "flex", alignItems: 'center', justifyContent: 'center' }}>

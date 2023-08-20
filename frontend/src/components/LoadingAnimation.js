@@ -12,10 +12,10 @@ const LoadingAnimation = ({customLoadingText = "", ...props}) => {
           return prevText + '.';
         }
       });
-    }, 200); // Adjust the interval duration as per your preference
+    }, 200);
     
     return () => {
-      clearInterval(intervalId); // Clear the interval when the component unmounts
+      clearInterval(intervalId); 
     };
   }, []);
 

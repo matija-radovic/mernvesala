@@ -33,15 +33,10 @@ function App() {
                         <Route path='/join' element={<JoinGame />} />
                         <Route path='/game/:roomID' element={<Game/>} />
                     </Route>
-                    <Route path='/signoutlogo' element={<SignOutLogo />} />
                     <Route path='*' element={<h1>Nothing here :(</h1>} />
                 </Routes>
             </BrowserRouter>
         </div>
     );
 }
-
-/**
- * <Route path ='/main-menu' element={<RequireAuth comp={<MainMenu/>} loader={<p> :)))))) </p>} redirect="/login"/>}/>
- */
 export default App;

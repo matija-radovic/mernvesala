@@ -2,6 +2,12 @@ import React, { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 
+/**
+ * As of 11.08.2023 this is Element is not anymore used
+ * @deprecated
+ * @param {*} params 
+ * @returns {React.JSX.Element}
+ */
 const RequireAuth = (params) => {
     /*const userData = useUserContext();
     const[loading, setLoading] = useState(!userData.authProgress);

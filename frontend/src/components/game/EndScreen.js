@@ -41,7 +41,7 @@ const EndScreen = ({ endRoomData, ...props }) => {
                         return (
                             <div className='end-screen-player' key={index}>
                                 <p className='player-roman-position'>{romanize(index + 1)}.</p>
-                                <p className='player-name'>- {player.user?.name}</p> {/* Use player.user?.name */}
+                                <p className='player-name'>{player.user?.name}</p>
                                 <p className='player-points'>{player.points}</p>
                                 <p className='points-text'>&nbsp;&nbsp;points</p>
                             </div>

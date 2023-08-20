@@ -1,5 +1,11 @@
 const bcrypt = require('bcryptjs');
 
+/**
+ * Hashes the password
+ * @deprecated
+ * @param {string} password 
+ * @returns {Promise}
+ */
 const hashPassword = (password) => {
     return new Promise((resolve, reject) => {
         console.log("Usli smo u promise: proslo");

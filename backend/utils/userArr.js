@@ -1,24 +1,41 @@
+const { Socket } = require('socket.io');
 const User = require('../model/userModel');
 
-
+/**
+ * Represents a letter and if its guessed or not
+ * @class
+ */
 class Letter {
+    /**
+     * @constructor
+     * @param {string} char 
+     * @param {boolean} guessedRight 
+     */
     constructor(char, guessedRight) {
+        /**@type {string} */
         this.char = char;
+        /**@type {boolean} */
         this.guessedRight = guessedRight;
     }
 }
 
+/**
+ * Represnts a player that is currently in game
+ * @class
+ */
 class Player {
     /**
-     * 
-     * @param {User} user 
-     * @param {String} socketID 
+     * @constructor
+     * @param {User} user - from '../model/userModel.js
+     * @param {string} socketID 
      */
     constructor(user, socketID) {
         this.user = user;
         this.socketID = socketID;
         this.turn = false;
-        this.status = "Online" //Offline //this.onlineStatus = true/false
+        /**Can be: 'Online' | 'Offline' */
+        this.status = "Online"
+        /**@type {Letter[]} */
         this.guessedLetters = [];
         this.guessedAttempts = 0;
         this.points = 0;
@@ -38,7 +55,9 @@ class Player {
     getPlayer() {
         return {
             user: {
+                /** @type {string}*/
                 name: this.user.name,
+                /** @type {number}*/
                 picture: this.user.picture
             },
             turn: this.turn,
@@ -52,20 +71,41 @@ class Player {
         this.guessedLetters.push(new Letter(letter, guessedRight));
     }
 
+    /**
+     * Adds 'points' amount of points to current player
+     * @param {number} points 
+     */
     addPoints(points) {
         this.points += points;
     }
 
+    /**
+     * Adds one more attempt to current player
+     */
     incrementAttempt() {
         this.guessedAttempts += 1;
     }
 }
 
+/**
+ * Represents a game room
+ * @class
+ */
 class Room {
+    /**
+     * @constructor
+     * @param {number} roomID - recived from RoomCodeManager class
+     * @param {number} playerNumber - number of players in a game
+     * @param {string} word - genereated from WordManager class
+     * @param {Function} deleteRoomCallback - passed down function for deletion
+     */
     constructor(roomID, playerNumber, word, deleteRoomCallback) {
         this.roomID = roomID;
-        this.roomState = "Waiting"; //"Progress" "Ended"
+        /** Can and must be ['Waiting' | 'Progress' | 'Ended']*/
+        this.roomState = "Waiting";
+        /**@type {number} */
         this.playerNumber = playerNumber;
+        /** @type {Player[]} */
         this.players = [];
         this.word = word;
         this.guessedLetterIndexes = [];
@@ -75,10 +115,16 @@ class Room {
         this.deleteRoomCallback = deleteRoomCallback;
     }
 
+    /**
+     * For debugging, prints all users in the game
+     */
     printArr() {
         this.players.forEach((p) => { console.log(`${p.user.name}`) })
     }
 
+    /**
+     * For debugging, prints only important data about the room (all except timeouts)
+     */
     printRoom() {
         console.log("//////////////////////////////////////////")
         console.log("Room info: ", {
@@ -93,12 +139,12 @@ class Room {
         this.players.forEach((p) => { console.log(`${p.user.name}`) })
         console.log("//////////////////////////////////////////")
     }
+
     /**
      * Joins a user to room. If user is in the same room, `player.status` will be set to "Online" and if hes accessing from different socket, `socketID` will change to new one.
-     * Information about socket change should be handled by the invoker of this function.
-     * 
+     * Information about socket change should be handled by the invoker of this function. It only joins the socket to this room.
      * @param {User} user 
-     * @param {String} socketID 
+     * @param {Socket} socket
      * @throws {Error} If `Room.roomState` is in progress or ended, or room is full.
      */
     async joinRoom(user, socket) {
@@ -126,20 +172,19 @@ class Room {
         this.players.push(new Player(await User.findById(user.id), socket.id));
         console.log("User: " + user.name + " joined");
         console.log("User list after the newly joined user: "); this.printArr();
-        //Time the user has to join the room
+        
+        //Deleting the timeoutCreation since the user joined the room
         if (this.timeoutCreation) {
             clearTimeout(this.timeoutCreation);
             this.timeoutCreation = null;
         }
-
-        /*this.printArr();*/
     }
 
     /**
      * Based on type of leaving will change the status of the user from "Online" to "Offline" 
      * or remove him from the room if room state is "Waiting"
      * @param {User} user - user to be removed/changed status
-     * @param {String} socketID 
+     * @param {Socket} socket
      * @param {String} type ['disconnect' | 'leave'] other types throw Error
      * @returns 
      */
@@ -209,8 +254,8 @@ class Room {
     }
 
     /**
-     * Deletes the room after x amount of time
-     * @param {Number} time 
+     * Deletes the room after `time` amount of time
+     * @param {Number} time default is 40
      */
     emptyRoomDeletionTimeout(time = 40) {
         this.timeoutCreation = setTimeout(() => {
@@ -221,6 +266,9 @@ class Room {
         }, time * 1000) //sec
     }
 
+    /**
+     * Deletes the room after game started in 40minutes
+     */
     roomLifeTimeout() {
         this.timeoutExistance = setTimeout(() => {
             this.timeoutExistance = null;
@@ -229,7 +277,7 @@ class Room {
     }
 
     /**
-     * Find the next player turn
+     * Gives a turn to next player. For player to get the next turn he must be 'Online' (`Player.status === 'Online'`)
      * @returns {Player} player that is next move or null if no users are connected;
      * @throws {Error} if cant find the current user;
      */
@@ -261,6 +309,10 @@ class Room {
     }
 
 
+    /**
+     * @param {string} word 
+     * @returns array of indexes where char is found, if word doesnt match, undefined is returned
+     */
     validWord(word) {
         if (word === this.word) {
             const allIndexes = Array.from({ length: this.word.length }, (_, index) => index);
@@ -295,6 +347,10 @@ class Room {
         return charIndexes;
     }
 
+    /**
+     * Adds the correct guessed letters to `guessedLetterIndexes` array of this room
+     * @param {Array} arrayOfLetterIndexes 
+     */
     setGuessedIndexes(arrayOfLetterIndexes) {
         arrayOfLetterIndexes.forEach(letter => {
             this.guessedLetterIndexes.push(letter);
@@ -302,7 +358,9 @@ class Room {
     }
 
     /**
-     * Moramo da pazimo kada settujemo sledeci korak
+     * Returns a winner of current game, if two players have the same amount of points the one that made the last turn (and has the max points) will be set as winner, if two players have the same amount of points but neither of them guessed the word the first player with max points is returned.
+     * @satisfies `roomState === 'Ended'` and `nextTurn()` is not called before this method
+     * @returns {Player} player object
      */
     findWinner() {
         const winner = this.players.reduce((maxPlayer, currentPlayer) => {
@@ -317,6 +375,9 @@ class Room {
         return winner;
     }
 
+    /**
+     * @returns {Array} returns a array of letters of all guessed letters
+     */
     getUsedLetters() {
         const letters = [];
         this.players.forEach(p => {
@@ -325,6 +386,9 @@ class Room {
         return letters;
     }
 
+    /**
+     * @returns specific data about the room for players, so no sensitive data is being shared
+     */
     getRoomDataForPlayers() {
         const guessedLetters = this.guessedLetterIndexes.map(index => ({
             index: index,
@@ -341,6 +405,9 @@ class Room {
         }
     }
 
+    /**
+     * @returns {Player[]} returns only specific data about players so that no sensitive data is being shared. Check {@linkcode Player.getPlayer()} for more information about getPlayer function.
+     */
     getPlayers() {
         const arr = [];
         this.players.forEach(p => {
@@ -349,6 +416,11 @@ class Room {
         return arr;
     }
 
+    /**
+     * Not used any more since {@linkcode Room.getRoomDataForPlayers()} was implemented
+     * @deprecated
+     * @returns 
+     */
     getEndRoomData() {
         return {
             playerNumber: this.playerNumber,
@@ -359,6 +431,9 @@ class Room {
 }
 
 
+/**
+ * Used to generate unique non repeating codes.
+ */
 class RoomCodeManager {
     /**
      * Creates a code manager of size `codeLength`, default is 4
@@ -369,13 +444,19 @@ class RoomCodeManager {
         this.usedCodes = new Set();
     }
 
+    /**
+     * @static
+     * @param {number} min minimum value 
+     * @param {number} max maximum value
+     * @returns a random number from `min` to `max`
+     */
     static randInt(min, max) {
         return Math.floor(Math.random() * (max - min)) + min;
     }
 
     /**
      * Returns a code of length provided upon class creation (default is 4) and stores it in Set
-     * @returns {Number} generated code
+     * @returns {number} generated code
      */
     generateCode() {
         const min = 0;
@@ -402,6 +483,7 @@ class RoomCodeManager {
     }
 }
 
+/** Class to generate a random word from `words` variable */
 class WordManager {
     constructor() {
         this.words = [
@@ -409,18 +491,39 @@ class WordManager {
         ]
     }
 
+    /**
+     * @returns returns a random word from `WordManager.words` array
+     */
     getOneWord() {
         return this.words[RoomCodeManager.randInt(0, this.words.length)];
     }
 }
 
+/**
+ * Represents the core logic of the game, handling code and word generation as well as room management.
+ * @class
+ * @param {Object} io - The Socket.IO module instance. This should be passed as soon as the module is required, preferably immediately after importing it in the main file (e.g., `server.js`).
+ * @example
+ * // In the main file (e.g., server.js)
+ * const io = require('socket.io')(server);
+ * const rooms = require('./utils/userArr');
+ * rooms.init(io);
+ */
 class GameRooms {
+    /**Creates a 3 variables: `GameRooms.wordManager`, `GameRooms.roomCodeManager`, `GameRooms.currentRooms`. 
+     * These variables are responsible for regulating rooms, codes and words.
+     */
     constructor() {
-        this.wordManager = new WordManager; //Za definisanje reči
+        this.wordManager = new WordManager; 
         this.roomCodeManager = new RoomCodeManager;
+        /**@type {Room[]} */
         this.currentRooms = [];
     }
 
+    /**
+     * Binds Socket.IO module instance to the GameRooms object.
+     * @param {Object} io - The Socket.IO module instance
+     */
     init(io) {
         this.io = io;
     }
@@ -445,7 +548,8 @@ class GameRooms {
      * Deletes a room from the currentRoom array
      * Removes all sockets from that room
      * Releases the roomCode
-     * @param {Number} roomID 
+     * @param {number} roomID 
+     * @param {string} reason - Default value is undefined or empty string. This variable should be used when there is a specific reason for room deletion (e.g., `Ending mid game`, `Life time exceeded`)
      */
     deleteRoom(roomID, reason = "") {
         console.log("room with id:" + roomID + "got deleted");
@@ -457,7 +561,7 @@ class GameRooms {
 
         const r = this.currentRooms.find(rm => rm.roomID === roomID);
         if (r?.roomLifeTimeout) {
-            clearInterval(r.roomLifeTimeout);
+            clearTimeout(r.roomLifeTimeout);
         }
 
         this.io.socketsLeave(roomID);
@@ -465,6 +569,11 @@ class GameRooms {
         this.currentRooms = this.currentRooms.filter(room => room.roomID !== roomID);
     }
 
+    /**
+     * Changes the state from 'Waiting' to 'Progress'. Emits socket.io event: `game:update:start` to all users in the given room, currently this event is not registered by frontend since `game:update` is being called at main file(server.js on event `game:join` line #109)
+     * @param {number} roomID
+     * @throws {Error} Occurs when number of physical players is not equal to number of players specified upon creation
+     */
     startGame(roomID) {
         const roomToStart = this.currentRooms.find(room => room.roomID === roomID);
         roomToStart.updateState('Progress');
@@ -475,9 +584,14 @@ class GameRooms {
         }
         roomToStart.players[0].turn = true;
         roomToStart.roomLifeTimeout();
-        this.io.to(roomID).emit('game:update:start', { room: roomToStart.getRoomDataForPlayers });
+        this.io.to(roomID).emit('game:update:start', { room: roomToStart.getRoomDataForPlayers() });
     }
 
+    /**
+     * Saves the the data for each user in the given `roomID`. Method doesn't check what the roomState is, it saves to database anyway.
+     * @async
+     * @param {number} roomID 
+     */
     async saveToDatabase(roomID) {
         const consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'];
         const vowel = ['a', 'e', 'i', 'o', 'u'];

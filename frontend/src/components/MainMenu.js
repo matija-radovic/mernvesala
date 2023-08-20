@@ -4,8 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import SignOutLogo from '../images/components/SignOutLogo';
 import SettingsLogo from '../images/components/SettingsLogo';
-import SoundOn from '../images/components/SoundOn';
-import SoundOff from '../images/components/SoundOff';
+/*import SoundOn from '../images/components/SoundOn';
+import SoundOff from '../images/components/SoundOff';*/
 import Modal from './modal/Modal';
 import ChoosePicture from './ChoosePicture'
 import { AvatarContext } from '../context/AvatarContext';
@@ -15,7 +15,7 @@ const MainMenu = () => {
     const { pictures } = useContext(AvatarContext);
     const navigate = useNavigate();
     const location = useLocation();
-    const [sound, setSound] = useState(true);
+    /*const [sound, setSound] = useState(true);*/ //For future implementations
     const [modalOpen, setModalOpen] = useState(false);
     const [modalRedirect, setModalRedirect] = useState(location.state?.msg);
     const close = () => setModalOpen(false);
@@ -30,9 +30,9 @@ const MainMenu = () => {
 
     
 
-    const toggleSound = () => {
+    /*const toggleSound = () => {
         setSound(!sound);
-    }
+    }*/
 
     const logOut = () => {
         setUserData({
@@ -60,8 +60,8 @@ const MainMenu = () => {
                     <img src={pictures[userData.user.picture]} alt="" />
                 </div>
                 <Link to='/settings'><SettingsLogo style={{ cursor: "pointer" }} width={40} height={40} /></Link>
-                {sound ? <SoundOn style={{ cursor: "pointer" }} width={40} height={40} onClick={toggleSound} />
-                    : <SoundOff style={{ cursor: "pointer" }} width={40} height={40} onClick={toggleSound} />}
+                {/*sound ? <SoundOn style={{ cursor: "pointer" }} width={40} height={40} onClick={toggleSound} />
+                    : <SoundOff style={{ cursor: "pointer" }} width={40} height={40} onClick={toggleSound} />*/}
             </div>
             <AnimatePresence
                 initial={false}

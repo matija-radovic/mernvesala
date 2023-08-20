@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
             //Joining him into Room object
             await roomToJoin.joinRoom(user, socket);
 
-            //Joining into socket
+            //Joining into socket - za brisanje
             socket.join(roomID);
 
             //Sending that its an succesful join and info about
@@ -235,7 +235,7 @@ io.on('connection', (socket) => {
         } catch (error) {
             console.log("yoo we got a error" + error)
             if(!roomToLeave){
-                socket.emit('game:leave:fail', {msg:'room-undefined'})
+                socket.emit('game:leave:fail', {msg:'room-undefined'});
             }
             socket.emit('game:leave:fail', { msg: "Leaving type is wrong or " + error});
         }
