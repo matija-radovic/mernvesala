@@ -2,7 +2,7 @@
 
 ## Opis
 
-Ovaj projekat predstavlja igru rađenu korišćenjem MERN stack-a (MongoDB, Express, React, Node.js) uz dodatak biblioteke Socket.io za komuniciranje u relanom vremenu. Glavni cilj igre je da pogodite što više slova u zadatoj reči. Svaka igra može imati između 2 i 4 igrača, a pobednik je onaj koji sakupi najviše poena. Poeni se dodeljuju za tačno pogođeno slovo ili kompletnu pogođenu reč. Igra poseduje i autentifikacioni sistem sa statistikom koju igrač može da pogleda, kao i opciju personalizacije profila.
+Ovaj projekat predstavlja igru rađenu korišćenjem MERN stack-a (MongoDB, Express, React, Node.js) uz dodatak biblioteke Socket.io za komuniciranje u realnom vremenu. Glavni cilj igre je da pogodite što više slova u zadatoj reči. Svaka igra može imati između 2 i 4 igrača, a pobednik je onaj koji sakupi najviše poena. Poeni se dodeljuju za tačno pogođeno slovo ili kompletnu pogođenu reč. Igra poseduje i autentifikacioni sistem sa statistikom koju igrač može da pogleda, kao i opciju personalizacije profila.
 
 ## Instalacija
 
